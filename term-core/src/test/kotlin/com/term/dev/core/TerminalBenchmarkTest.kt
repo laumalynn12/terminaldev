@@ -5,6 +5,7 @@ import kotlin.system.measureTimeMillis
 
 class TerminalBenchmarkTest {
 
+    // Milestone 2 emulator and streaming throughput benchmark
     @Test
     fun benchmarkStreamingThroughput() {
         val buffer = TerminalBuffer(rows = 40, columns = 120, maxScrollback = 10000)
