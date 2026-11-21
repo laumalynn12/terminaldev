@@ -73,6 +73,7 @@ kotlin {
 dependencies {
     implementation(project(":term-core"))
     implementation(project(":term-pty"))
+    implementation(project(":term-view"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)

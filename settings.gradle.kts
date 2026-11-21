@@ -17,3 +17,4 @@ rootProject.name = "terminaldev"
 include(":app")
 include(":term-core")
 include(":term-pty")
+include(":term-view")
