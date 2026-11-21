@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity() {
             val prootFile = File(nativeLibDir, "libproot.so")
 
             // Initial banner
-            val banner = "TerminalDev v0.1.0\r\n" +
+            val banner = "TerminalDev v0.2.0\r\n" +
                 "Native lib: ${prootFile.name} (verified on targetSdk 35)\r\n\r\n"
             parser.feed(banner.toByteArray(Charsets.UTF_8))
             terminalView.requestRedraw()

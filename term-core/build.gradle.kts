@@ -14,3 +14,9 @@ kotlin {
 dependencies {
     testImplementation(libs.junit)
 }
+
+tasks.withType<Test> {
+    testLogging {
+        showStandardStreams = true
+    }
+}

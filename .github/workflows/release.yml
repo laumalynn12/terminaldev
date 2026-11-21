@@ -52,6 +52,7 @@ jobs:
       - name: Identify and Verify Produced APK
         env:
           ABI: ${{ matrix.abi }}
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           APK_FILE=$(find app/build/outputs/apk/release/ -type f -name "*${ABI}*.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
@@ -60,7 +61,11 @@ jobs:
             exit 1
           fi
           
-          STANDARDIZED="terminaldev-v0.1.0-${ABI}-release.apk"
+          TAG="${TAG_NAME}"
+          if [[ "$TAG" != v* ]]; then
+            TAG="v0.2.0"
+          fi
+          STANDARDIZED="terminaldev-${TAG}-${ABI}-release.apk"
           cp "$APK_FILE" "$STANDARDIZED"
           
           SIZE=$(stat -c%s "$STANDARDIZED")
@@ -96,8 +101,8 @@ jobs:
         with:
           name: apk-${{ matrix.abi }}
           path: |
-            terminaldev-v0.1.0-${{ matrix.abi }}-release.apk
-            terminaldev-v0.1.0-${{ matrix.abi }}-release.apk.sha256
+            terminaldev-*-release.apk
+            terminaldev-*-release.apk.sha256
 
   publish-and-verify-release:
     needs: build-release-apk
@@ -134,7 +139,7 @@ jobs:
           
           gh release create "$TAG" release_assets/* \
             --title "TerminalDev $TAG" \
-            --notes "TerminalDev $TAG - Initial pre-release supporting arm64-v8a, armeabi-v7a, and x86_64." \
+            --notes "TerminalDev $TAG release supporting arm64-v8a, armeabi-v7a, and x86_64." \
             --prerelease
 
   verify-release:
