@@ -31,8 +31,8 @@ object WcWidth {
             codePoint in 0xfe30..0xfe6f ||
             codePoint in 0xff00..0xff60 ||
             codePoint in 0xffe0..0xffe6 ||
-            codePoint in 0x1f300..0x1f64f || // Miscellaneous Symbols and Pictographs, Emoticons
-            codePoint in 0x1f900..0x1f9ff || // Supplemental Symbols and Pictographs
+            codePoint in 0x1f300..0x1f6ff || // Miscellaneous Symbols and Pictographs, Emoticons, Transport
+            codePoint in 0x1f900..0x1faff || // Supplemental Symbols and Pictographs, Extended-A
             codePoint in 0x20000..0x2fffd ||
             codePoint in 0x30000..0x3fffd
         ) {
