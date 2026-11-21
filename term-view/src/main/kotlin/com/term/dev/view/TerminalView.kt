@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
@@ -30,13 +29,19 @@ class TerminalView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr), Choreographer.FrameCallback {
 
+    enum class CursorStyle {
+        BAR,
+        BLOCK,
+        UNDERLINE
+    }
+
     var buffer: TerminalBuffer = TerminalBuffer(rows = 24, columns = 80)
     var onInput: ((ByteArray) -> Unit)? = null
     var onResize: ((rows: Int, cols: Int) -> Unit)? = null
 
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        typeface = Typeface.MONOSPACE
-    }
+    var cursorStyle: CursorStyle = CursorStyle.BAR
+
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bgPaint = Paint()
     private val cursorPaint = Paint().apply {
         color = Color.parseColor("#33FF33")
@@ -68,18 +73,18 @@ class TerminalView @JvmOverloads constructor(
     private val colorPalette = IntArray(256)
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onDown(e: MotionEvent): Boolean = true
+
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            showSoftKeyboard()
+            return true
+        }
+
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             val linesDelta = (distanceY / charHeight).toInt()
             if (linesDelta != 0) {
                 scrollOffsetY = (scrollOffsetY + linesDelta).coerceIn(0, buffer.scrollback.size)
             }
-            return true
-        }
-
-        override fun onSingleTapUp(e: MotionEvent): Boolean {
-            requestFocus()
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(this@TerminalView, InputMethodManager.SHOW_IMPLICIT)
             return true
         }
     })
@@ -94,12 +99,21 @@ class TerminalView @JvmOverloads constructor(
     init {
         isFocusable = true
         isFocusableInTouchMode = true
+        loadTypeface()
         initColorPalette()
         updateFontMetrics()
     }
 
+    private fun loadTypeface() {
+        try {
+            val tf = Typeface.createFromAsset(context.assets, "fonts/JetBrainsMono-Regular.ttf")
+            textPaint.typeface = tf
+        } catch (e: Exception) {
+            textPaint.typeface = Typeface.MONOSPACE
+        }
+    }
+
     private fun initColorPalette() {
-        // 0..15 ANSI colors
         val standardColors = intArrayOf(
             0x000000, 0xCD3131, 0x0DBC79, 0xE5E510, 0x2472C8, 0xBC3FBC, 0x11A8CD, 0xE5E5E5,
             0x666666, 0xF14C4C, 0x23D18B, 0xF5F543, 0x3B8EEA, 0xD670D6, 0x29B8DB, 0xFFFFFF
@@ -107,7 +121,6 @@ class TerminalView @JvmOverloads constructor(
         for (i in 0..15) {
             colorPalette[i] = 0xFF000000.toInt() or standardColors[i]
         }
-        // 16..231: 6x6x6 color cube
         val steps = intArrayOf(0, 95, 135, 175, 215, 255)
         for (r in 0..5) {
             for (g in 0..5) {
@@ -117,7 +130,6 @@ class TerminalView @JvmOverloads constructor(
                 }
             }
         }
-        // 232..255: Grayscale ramp
         for (i in 0..23) {
             val gray = 8 + i * 10
             colorPalette[232 + i] = Color.rgb(gray, gray, gray)
@@ -128,9 +140,9 @@ class TerminalView @JvmOverloads constructor(
         val density = resources.displayMetrics.scaledDensity
         textPaint.textSize = textSizeSp * density
         val fm = textPaint.fontMetrics
-        charWidth = textPaint.measureText("M")
-        charHeight = fm.bottom - fm.top
-        charAscent = -fm.top
+        charWidth = textPaint.measureText("X")
+        charHeight = Math.ceil(textPaint.fontSpacing.toDouble()).toFloat()
+        charAscent = -fm.ascent
     }
 
     private fun recalculateTerminalDimensions() {
@@ -163,6 +175,27 @@ class TerminalView @JvmOverloads constructor(
     override fun doFrame(frameTimeNanos: Long) {
         pendingRedraw.set(false)
         invalidate()
+    }
+
+    fun showSoftKeyboard() {
+        post {
+            requestFocus()
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(this, 0)
+        }
+    }
+
+    fun hideSoftKeyboard() {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(windowToken, 0)
+    }
+
+    fun toggleSoftKeyboard() {
+        post {
+            requestFocus()
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        }
     }
 
     private fun resolveColor(encodedColor: Int, isBackground: Boolean): Int {
@@ -210,12 +243,15 @@ class TerminalView @JvmOverloads constructor(
                 val fg = row.fgColors[col]
                 val bg = row.bgColors[col]
                 val style = row.styles[col]
+                val isWide = row.widths[col] > 1 || row.codePoints[col] > 127
+
                 val spanBuilder = StringBuilder()
 
                 while (col < totalCols &&
                     row.fgColors[col] == fg &&
                     row.bgColors[col] == bg &&
-                    row.styles[col] == style
+                    row.styles[col] == style &&
+                    (row.widths[col] > 1 || row.codePoints[col] > 127) == isWide
                 ) {
                     val cp = row.codePoints[col]
                     val w = row.widths[col].toInt()
@@ -223,9 +259,14 @@ class TerminalView @JvmOverloads constructor(
                         spanBuilder.appendCodePoint(cp)
                     }
                     col++
+                    if (isWide && w > 0) {
+                        if (w == 2 && col < totalCols && row.widths[col].toInt() == 0) {
+                            col++
+                        }
+                        break
+                    }
                 }
 
-                val spanLength = col - startCol
                 val x1 = startCol * charWidth
                 val x2 = col * charWidth
 
@@ -235,23 +276,53 @@ class TerminalView @JvmOverloads constructor(
                     canvas.drawRect(x1, y, x2, y + charHeight, bgPaint)
                 }
 
-                val resolvedFg = resolveColor(fg, isBackground = false)
-                textPaint.color = resolvedFg
-                textPaint.isFakeBoldText = (style.toInt() and TerminalStyle.STYLE_BOLD.toInt()) != 0
-                textPaint.isUnderlineText = (style.toInt() and TerminalStyle.STYLE_UNDERLINE.toInt()) != 0
+                val str = spanBuilder.toString()
+                if (str.isNotEmpty()) {
+                    val resolvedFg = resolveColor(fg, isBackground = false)
+                    textPaint.color = resolvedFg
+                    textPaint.isFakeBoldText = (style.toInt() and TerminalStyle.STYLE_BOLD.toInt()) != 0
+                    textPaint.isUnderlineText = (style.toInt() and TerminalStyle.STYLE_UNDERLINE.toInt()) != 0
 
-                canvas.drawText(spanBuilder.toString(), x1, y + charAscent, textPaint)
+                    if (isWide) {
+                        val targetWidth = (col - startCol) * charWidth
+                        val measured = textPaint.measureText(str)
+                        if (measured > 0f && Math.abs(measured - targetWidth) > 1f) {
+                            canvas.save()
+                            canvas.translate(x1, 0f)
+                            canvas.scale(targetWidth / measured, 1f)
+                            canvas.drawText(str, 0f, y + charAscent, textPaint)
+                            canvas.restore()
+                        } else {
+                            canvas.drawText(str, x1, y + charAscent, textPaint)
+                        }
+                    } else {
+                        canvas.drawText(str, x1, y + charAscent, textPaint)
+                    }
+                }
             }
 
             // Draw cursor
             if (scrollOffsetY == 0 && buffer.cursorVisible && buffer.cursorRow == screenRowIdx) {
                 val cx = buffer.cursorCol * charWidth
-                canvas.drawRect(cx, y, cx + charWidth, y + charHeight, cursorPaint)
-                if (buffer.cursorCol in 0 until totalCols) {
-                    val cp = row.codePoints[buffer.cursorCol]
-                    if (cp != ' '.code) {
-                        textPaint.color = Color.BLACK
-                        canvas.drawText(String(Character.toChars(cp)), cx, y + charAscent, textPaint)
+                val density = resources.displayMetrics.density
+                when (cursorStyle) {
+                    CursorStyle.BAR -> {
+                        val barWidth = maxOf(2f, 2.5f * density)
+                        canvas.drawRect(cx, y, cx + barWidth, y + charHeight, cursorPaint)
+                    }
+                    CursorStyle.UNDERLINE -> {
+                        val lineThickness = maxOf(2f, 2.5f * density)
+                        canvas.drawRect(cx, y + charHeight - lineThickness, cx + charWidth, y + charHeight, cursorPaint)
+                    }
+                    CursorStyle.BLOCK -> {
+                        canvas.drawRect(cx, y, cx + charWidth, y + charHeight, cursorPaint)
+                        if (buffer.cursorCol in 0 until totalCols) {
+                            val cp = row.codePoints[buffer.cursorCol]
+                            if (cp != ' '.code) {
+                                textPaint.color = Color.BLACK
+                                canvas.drawText(String(Character.toChars(cp)), cx, y + charAscent, textPaint)
+                            }
+                        }
                     }
                 }
             }

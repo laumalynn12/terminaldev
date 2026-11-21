@@ -45,7 +45,18 @@ class MainActivity : AppCompatActivity() {
         startShellSession()
     }
 
+    override fun onResume() {
+        super.onResume()
+        terminalView.postDelayed({
+            terminalView.showSoftKeyboard()
+        }, 300)
+    }
+
     private fun setupExtraKeys() {
+        findViewById<Button>(R.id.btnKbd).setOnClickListener {
+            terminalView.toggleSoftKeyboard()
+        }
+
         val btnCtrl = findViewById<Button>(R.id.btnCtrl)
         val btnAlt = findViewById<Button>(R.id.btnAlt)
 
@@ -125,7 +136,7 @@ class MainActivity : AppCompatActivity() {
             val prootFile = File(nativeLibDir, "libproot.so")
 
             // Initial banner
-            val banner = "TerminalDev v0.2.0\r\n" +
+            val banner = "TerminalDev v0.2.1\r\n" +
                 "Native lib: ${prootFile.name} (verified on targetSdk 35)\r\n\r\n"
             parser.feed(banner.toByteArray(Charsets.UTF_8))
             terminalView.requestRedraw()
