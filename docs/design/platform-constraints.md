@@ -14,6 +14,7 @@ Beginning with Android 10 (API 29), Android enforces W^X memory restrictions and
 2. **High `targetSdk` (TerminalDev decision, `targetSdk 35`, `compileSdk 35`):**
    - *Implementation:* PRoot is compiled as an ELF executable but named `libproot.so` and placed in the APK `lib/<abi>/` directory. The Android package manager extracts it to `nativeLibraryDir` with execute (`+x`) permissions. PRoot is executed from `nativeLibraryDir`, and guest Ubuntu binaries are executed under PRoot's ptrace interception.
    - *Advantage:* Installs cleanly on all Android versions up to Android 15/16 without OS deprecation warnings or installation blocks. Uses modern Android permission flows.
+   - *Verification status:* **Verified** on real Android physical device (ARM64, Android 10+) using `terminaldev-v0.1.0-arm64-v8a-release.apk` (PID 6715, UID/GID 11267). Binary execution succeeded without SELinux denials.
 
 ## 2. Phantom process killer (Android 12+)
 
