@@ -23,13 +23,13 @@ jobs:
           fetch-depth: 1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@c1e32363499c30f45efb0451cf4f07e5c54c30c8 # v4.8.0
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
           distribution: "temurin"
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           gradle-version: "9.5.0"
 
@@ -60,11 +60,9 @@ jobs:
             exit 1
           fi
           
-          # Move to standardized name: terminaldev-v0.1.0-<abi>-release.apk
           STANDARDIZED="terminaldev-v0.1.0-${ABI}-release.apk"
           cp "$APK_FILE" "$STANDARDIZED"
           
-          # Check size ceiling: 6,291,456 bytes
           SIZE=$(stat -c%s "$STANDARDIZED")
           echo "Built $STANDARDIZED: $SIZE bytes"
           if [ "$SIZE" -gt 6291456 ]; then
@@ -72,7 +70,6 @@ jobs:
             exit 1
           fi
 
-          # Verify signature with apksigner from runner Android build-tools
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -n 1)
           echo "Using apksigner: $APKSIGNER"
           $APKSIGNER verify --verbose --print-certs "$STANDARDIZED" > cert_info.txt
@@ -95,7 +92,7 @@ jobs:
           rm -rf "$RUNNER_TEMP/keystore"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb99ba841c # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: apk-${{ matrix.abi }}
           path: |
@@ -111,7 +108,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Download all APK artifacts
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: artifacts
 
@@ -145,6 +142,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
       - name: Download and Verify Published Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
