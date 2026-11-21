@@ -24,7 +24,7 @@ class PtySession(
     fun close() {
         try {
             pfd.close()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
         PtyBridge.closeFd(masterFd)
     }
 

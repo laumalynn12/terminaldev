@@ -256,10 +256,10 @@ class TerminalParser(
                 7 -> buffer.currentStyle = (buffer.currentStyle.toInt() or TerminalStyle.STYLE_INVERSE.toInt()).toByte()
                 8 -> buffer.currentStyle = (buffer.currentStyle.toInt() or TerminalStyle.STYLE_INVISIBLE.toInt()).toByte()
                 9 -> buffer.currentStyle = (buffer.currentStyle.toInt() or TerminalStyle.STYLE_STRIKETHROUGH.toInt()).toByte()
-                22 -> buffer.currentStyle = (buffer.currentStyle.toInt() and (TerminalStyle.STYLE_BOLD or TerminalStyle.STYLE_FAINT).inv().toInt()).toByte()
-                23 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_ITALIC.inv().toInt()).toByte()
-                24 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_UNDERLINE.inv().toInt()).toByte()
-                27 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_INVERSE.inv().toInt()).toByte()
+                22 -> buffer.currentStyle = (buffer.currentStyle.toInt() and (TerminalStyle.STYLE_BOLD.toInt() or TerminalStyle.STYLE_FAINT.toInt()).inv()).toByte()
+                23 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_ITALIC.toInt().inv()).toByte()
+                24 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_UNDERLINE.toInt().inv()).toByte()
+                27 -> buffer.currentStyle = (buffer.currentStyle.toInt() and TerminalStyle.STYLE_INVERSE.toInt().inv()).toByte()
                 in 30..37 -> buffer.currentFg = TerminalStyle.encodeIndexedColor(p - 30)
                 38 -> {
                     if (idx + 1 < paramCount) {

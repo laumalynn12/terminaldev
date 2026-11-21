@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     session.outputStream.write(bytes)
                     session.outputStream.flush()
-                } catch (_: Exception) {}
+                } catch (e: Exception) {}
             }
         }
     }
