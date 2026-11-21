@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -55,10 +54,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
-    kotlin {
-        jvmToolchain(21)
-    }
-
     splits {
         abi {
             isEnable = true
@@ -73,6 +68,10 @@ android {
             useLegacyPackaging = true
         }
     }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
