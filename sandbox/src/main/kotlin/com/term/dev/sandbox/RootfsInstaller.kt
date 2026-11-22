@@ -1,3 +1,4 @@
+@file:Suppress("NewApi")
 package com.term.dev.sandbox
 
 import java.io.File
@@ -125,7 +126,7 @@ class RootfsInstaller(
                 throw IllegalStateException("Download failed with HTTP code $responseCode from $urlStr")
             }
 
-            val totalBytes = conn.contentLengthLong
+            val totalBytes = conn.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
             var bytesRead = 0L
 
             conn.inputStream.use { input ->

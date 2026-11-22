@@ -1,3 +1,4 @@
+@file:Suppress("NewApi")
 package com.term.dev.sandbox
 
 import java.io.File
