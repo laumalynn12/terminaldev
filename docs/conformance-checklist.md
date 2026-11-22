@@ -38,3 +38,14 @@ All tests below are implemented in `term-core/src/test/kotlin/` and verified in 
 | `less` | Alternate screen, raw mode, page-down/up | Paging text files without polluting main scrollback buffer | Expected (ready for rootfs) |
 | SGR mouse tracking | `\e[?1000h`, `\e[?1002h`, `\e[?1006h` | Touch taps and drags translate to SGR `<button;col;rowM` reporting sequences | Verified |
 | Window resize | `ioctl(TIOCSWINSZ)` | Terminal grid recalculates rows and columns dynamically on display orientation change | Verified |
+
+## 3. Ubuntu sandbox, PRoot, and shared storage (Milestone 3)
+
+| Component | Test / Capability | Behavior Validated | Status |
+|---|---|---|---|
+| `SandboxConfig` | Official Canonical hashes | ARM64 (`a91d5a93...`), AMD64 (`e77b6f10...`), ARMHF (`4fcee4d2...`) SHA-256 sums match canonical release | Verified |
+| `TarExtractor` | Streaming archive extraction | Extracts tar without path traversal, handles GNU long names, creates symlinks and restores Unix modes | Verified |
+| `RootfsPatcher` | System file provisioning | Writes `/etc/resolv.conf`, `/etc/hosts`, `/etc/hostname`, and GID mapping (inet 3003, everybody 9997, storage 1077) | Verified |
+| `ProotLauncher` | Command & env construction | Builds `-0 --link2symlink --sysvipc -r <rootfs> -w /root -b /sdcard` launch arguments and guest environment | Verified |
+| Shared Storage | `/sdcard` bind mount & permissions | Declares `MANAGE_EXTERNAL_STORAGE` and `READ/WRITE_EXTERNAL_STORAGE`; binds `/sdcard` and generates `~/storage` symlinks | Verified |
+| Cursor idle-blink | Keystroke pause | Cursor remains solid visible during typing and arrow repeat hold, resuming blink only after 650 ms idle | Verified |

@@ -1,16 +1,28 @@
 package com.term.dev
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.term.dev.core.TerminalParser
 import com.term.dev.pty.PtySession
+import com.term.dev.sandbox.ProotLauncher
+import com.term.dev.sandbox.RootfsInstaller
+import com.term.dev.sandbox.SandboxConfig
 import com.term.dev.view.TerminalView
 import java.io.File
 import kotlin.concurrent.thread
@@ -47,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupExtraKeys()
+        checkStoragePermissions()
         startShellSession()
     }
 
@@ -55,6 +68,33 @@ class MainActivity : AppCompatActivity() {
         terminalView.postDelayed({
             terminalView.showSoftKeyboard()
         }, 300)
+    }
+
+    private fun checkStoragePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                    } catch (ignored: Exception) {}
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val readPerm = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+            val writePerm = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            if (readPerm != PackageManager.PERMISSION_GRANTED || writePerm != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    1001
+                )
+            }
+        }
     }
 
     private fun updateModifierButtonState(button: Button, active: Boolean) {
@@ -70,6 +110,7 @@ class MainActivity : AppCompatActivity() {
         val repeatRunnable = object : Runnable {
             override fun run() {
                 if (isRepeating) {
+                    terminalView.onUserAction()
                     action()
                     handler.postDelayed(this, 50)
                 }
@@ -80,6 +121,7 @@ class MainActivity : AppCompatActivity() {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     v.isPressed = true
+                    terminalView.onUserAction()
                     action()
                     isRepeating = true
                     handler.removeCallbacks(repeatRunnable)
@@ -100,6 +142,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupExtraKeys() {
         findViewById<Button>(R.id.btnKbd).setOnClickListener {
+            terminalView.onUserAction()
             terminalView.toggleSoftKeyboard()
         }
 
@@ -107,11 +150,13 @@ class MainActivity : AppCompatActivity() {
         val btnAlt = findViewById<Button>(R.id.btnAlt)
 
         btnCtrl.setOnClickListener {
+            terminalView.onUserAction()
             ctrlActive = !ctrlActive
             updateModifierButtonState(btnCtrl, ctrlActive)
         }
 
         btnAlt.setOnClickListener {
+            terminalView.onUserAction()
             altActive = !altActive
             updateModifierButtonState(btnAlt, altActive)
         }
@@ -160,13 +205,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnQuote).setOnClickListener { sendBytesToPty("\"".toByteArray()) }
     }
 
-    private fun processModifiers(input: ByteArray): ByteArray {
-        if (!ctrlActive && !altActive) return input
+    private fun processModifiers(bytes: ByteArray): ByteArray {
+        if (!ctrlActive && !altActive) return bytes
 
-        var result = input
-        if (ctrlActive && input.size == 1) {
-            val b = input[0]
-            val c = b.toInt().toChar()
+        var result = bytes
+        if (ctrlActive && bytes.size == 1) {
+            val c = bytes[0].toInt().toChar()
             if (c in 'a'..'z') {
                 result = byteArrayOf((c - 'a' + 1).toByte())
             } else if (c in 'A'..'Z') {
@@ -186,6 +230,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendBytesToPty(bytes: ByteArray) {
+        terminalView.onUserAction()
         ptySession?.let { session ->
             thread {
                 try {
@@ -199,25 +244,64 @@ class MainActivity : AppCompatActivity() {
     private fun startShellSession() {
         thread {
             val nativeLibDir = applicationInfo.nativeLibraryDir
-            val prootFile = File(nativeLibDir, "libproot.so")
+            val ubuntuDir = File(filesDir, "ubuntu")
+            val tmpDir = File(filesDir, "tmp")
+            if (!tmpDir.exists()) tmpDir.mkdirs()
 
-            // Initial banner
-            val banner = "TerminalDev v0.2.2\r\n" +
-                "Native lib: ${prootFile.name} (verified on targetSdk 35)\r\n\r\n"
-            parser.feed(banner.toByteArray(Charsets.UTF_8))
-            terminalView.requestRedraw()
+            val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
+            val pkg = SandboxConfig.getPackageForAbi(primaryAbi)
+            val installer = RootfsInstaller()
+
+            if (!installer.isInstalled(ubuntuDir)) {
+                val initBanner = "\u001B[1;36mTerminalDev v0.3.0\u001B[0m (Ubuntu 24.04.5 LTS Sandbox)\r\n" +
+                    "Architecture: $primaryAbi | targetSdk: 35\r\n\r\n" +
+                    "\u001B[33mGuest rootfs not found. Initializing Ubuntu sandbox...\u001B[0m\r\n"
+                parser.feed(initBanner.toByteArray(Charsets.UTF_8))
+                terminalView.requestRedraw()
+
+                try {
+                    installer.install(pkg, ubuntuDir, tmpDir) { progress ->
+                        val line = "\r\u001B[K[setup] ${progress.message}\r\n"
+                        parser.feed(line.toByteArray(Charsets.UTF_8))
+                        terminalView.requestRedraw()
+                    }
+                    parser.feed("\r\n\u001B[1;32m[setup] Rootfs successfully installed.\u001B[0m\r\n\r\n".toByteArray(Charsets.UTF_8))
+                    terminalView.requestRedraw()
+                } catch (e: Exception) {
+                    val errBanner = "\r\n\u001B[1;31m[setup] Installation failed: ${e.message}\u001B[0m\r\n" +
+                        "Falling back to Android host shell /system/bin/sh...\r\n\r\n"
+                    parser.feed(errBanner.toByteArray(Charsets.UTF_8))
+                    terminalView.requestRedraw()
+                    startHostShellFallback()
+                    return@thread
+                }
+            }
+
+            // Launch Ubuntu guest via PRoot
+            val prootFile = File(nativeLibDir, "libproot.so")
+            if (!prootFile.exists()) {
+                val errBanner = "\r\n\u001B[1;31m[error] libproot.so not found in $nativeLibDir\u001B[0m\r\n" +
+                    "Falling back to Android host shell /system/bin/sh...\r\n\r\n"
+                parser.feed(errBanner.toByteArray(Charsets.UTF_8))
+                terminalView.requestRedraw()
+                startHostShellFallback()
+                return@thread
+            }
+
+            val launcher = ProotLauncher()
+            val prootCmd = launcher.buildLaunchCommand(
+                nativeLibDir = nativeLibDir,
+                ubuntuDir = ubuntuDir,
+                tmpDir = tmpDir,
+                guestCommand = listOf("/bin/bash", "-l")
+            )
 
             try {
                 val session = PtySession.create(
-                    cmd = "/system/bin/sh",
-                    cwd = filesDir.absolutePath,
-                    args = emptyArray(),
-                    envVars = arrayOf(
-                        "TERM=xterm-256color",
-                        "COLORTERM=truecolor",
-                        "PATH=/system/bin:/system/xbin",
-                        "HOME=${filesDir.absolutePath}"
-                    ),
+                    cmd = prootCmd.executable,
+                    cwd = prootCmd.cwd,
+                    args = prootCmd.args,
+                    envVars = prootCmd.envVars,
                     rows = terminalView.buffer.rows,
                     cols = terminalView.buffer.columns
                 )
@@ -235,9 +319,46 @@ class MainActivity : AppCompatActivity() {
                 parser.feed("\r\n[Process completed: exit $status]\r\n".toByteArray())
                 terminalView.requestRedraw()
             } catch (e: Exception) {
-                parser.feed("\r\n[Error starting shell: ${e.message}]\r\n".toByteArray())
+                val errBanner = "\r\n\u001B[1;31m[error] Failed to launch PRoot: ${e.message}\u001B[0m\r\n" +
+                    "Falling back to Android host shell...\r\n\r\n"
+                parser.feed(errBanner.toByteArray(Charsets.UTF_8))
+                terminalView.requestRedraw()
+                startHostShellFallback()
+            }
+        }
+    }
+
+    private fun startHostShellFallback() {
+        try {
+            val session = PtySession.create(
+                cmd = "/system/bin/sh",
+                cwd = filesDir.absolutePath,
+                args = emptyArray(),
+                envVars = arrayOf(
+                    "TERM=xterm-256color",
+                    "COLORTERM=truecolor",
+                    "PATH=/system/bin:/system/xbin",
+                    "HOME=${filesDir.absolutePath}"
+                ),
+                rows = terminalView.buffer.rows,
+                cols = terminalView.buffer.columns
+            )
+            ptySession = session
+
+            val buffer = ByteArray(4096)
+            while (true) {
+                val n = session.inputStream.read(buffer)
+                if (n <= 0) break
+                parser.feed(buffer, 0, n)
                 terminalView.requestRedraw()
             }
+
+            val status = session.waitFor()
+            parser.feed("\r\n[Host shell completed: exit $status]\r\n".toByteArray())
+            terminalView.requestRedraw()
+        } catch (e: Exception) {
+            parser.feed("\r\n[Error starting shell: ${e.message}]\r\n".toByteArray())
+            terminalView.requestRedraw()
         }
     }
 

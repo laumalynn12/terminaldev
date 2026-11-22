@@ -146,10 +146,16 @@ class TerminalView @JvmOverloads constructor(
     }
 
     fun restartCursorBlink() {
+        onUserAction()
+    }
+
+    fun onUserAction() {
         mainHandler.removeCallbacks(cursorBlinkRunnable)
-        cursorBlinkVisible = true
-        requestRedraw()
-        mainHandler.postDelayed(cursorBlinkRunnable, 500)
+        if (!cursorBlinkVisible) {
+            cursorBlinkVisible = true
+            requestRedraw()
+        }
+        mainHandler.postDelayed(cursorBlinkRunnable, 650)
     }
 
     private fun loadTypeface() {
@@ -378,6 +384,9 @@ class TerminalView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            onUserAction()
+        }
         scaleGestureDetector.onTouchEvent(event)
         if (scaleGestureDetector.isInProgress) return true
 

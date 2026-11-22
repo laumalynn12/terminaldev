@@ -10,8 +10,8 @@ android {
         applicationId = "com.term.dev"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.3.0"
     }
 
     signingConfigs {
@@ -74,6 +74,7 @@ dependencies {
     implementation(project(":term-core"))
     implementation(project(":term-pty"))
     implementation(project(":term-view"))
+    implementation(project(":sandbox"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)

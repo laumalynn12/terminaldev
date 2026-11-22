@@ -16,16 +16,18 @@ target_link_libraries(pty
 )
 
 # Test proot binary packaged as a shared library for Android 10+ targetSdk 35 execution verification
-add_executable(proot_bin
-    proot_test.c
-)
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    add_executable(proot_bin
+        proot_test.c
+    )
 
-set_target_properties(proot_bin PROPERTIES
-    OUTPUT_NAME "proot"
-    PREFIX "lib"
-    SUFFIX ".so"
-)
+    set_target_properties(proot_bin PROPERTIES
+        OUTPUT_NAME "proot"
+        PREFIX "lib"
+        SUFFIX ".so"
+    )
 
-target_link_libraries(proot_bin
-    log
-)
+    target_link_libraries(proot_bin
+        log
+    )
+endif()
