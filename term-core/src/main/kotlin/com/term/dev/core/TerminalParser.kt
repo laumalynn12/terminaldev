@@ -164,7 +164,7 @@ class TerminalParser(
         state = State.GROUND
         resetParams()
         oscBuffer.setLength(0)
-        utf8Remaining = 0
+        utf8ExpectedBytes = 0
         utf8CodePoint = 0
     }
 
