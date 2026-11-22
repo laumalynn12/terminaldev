@@ -1,7 +1,12 @@
 package com.term.dev
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.term.dev.core.TerminalParser
@@ -52,6 +57,47 @@ class MainActivity : AppCompatActivity() {
         }, 300)
     }
 
+    private fun updateModifierButtonState(button: Button, active: Boolean) {
+        val bgColor = if (active) Color.parseColor("#484848") else Color.parseColor("#242424")
+        val textColor = if (active) Color.parseColor("#33FF33") else Color.parseColor("#E0E0E0")
+        button.backgroundTintList = ColorStateList.valueOf(bgColor)
+        button.setTextColor(textColor)
+    }
+
+    private fun setupRepeatButton(button: View, action: () -> Unit) {
+        val handler = Handler(Looper.getMainLooper())
+        var isRepeating = false
+        val repeatRunnable = object : Runnable {
+            override fun run() {
+                if (isRepeating) {
+                    action()
+                    handler.postDelayed(this, 50)
+                }
+            }
+        }
+
+        button.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.isPressed = true
+                    action()
+                    isRepeating = true
+                    handler.removeCallbacks(repeatRunnable)
+                    handler.postDelayed(repeatRunnable, 350)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.isPressed = false
+                    isRepeating = false
+                    handler.removeCallbacks(repeatRunnable)
+                    v.performClick()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
     private fun setupExtraKeys() {
         findViewById<Button>(R.id.btnKbd).setOnClickListener {
             terminalView.toggleSoftKeyboard()
@@ -62,36 +108,56 @@ class MainActivity : AppCompatActivity() {
 
         btnCtrl.setOnClickListener {
             ctrlActive = !ctrlActive
-            btnCtrl.setBackgroundColor(if (ctrlActive) Color.parseColor("#0DBC79") else Color.parseColor("#242424"))
+            updateModifierButtonState(btnCtrl, ctrlActive)
         }
 
         btnAlt.setOnClickListener {
             altActive = !altActive
-            btnAlt.setBackgroundColor(if (altActive) Color.parseColor("#0DBC79") else Color.parseColor("#242424"))
+            updateModifierButtonState(btnAlt, altActive)
         }
 
         findViewById<Button>(R.id.btnEsc).setOnClickListener { sendBytesToPty(byteArrayOf(27)) }
         findViewById<Button>(R.id.btnTab).setOnClickListener { sendBytesToPty(byteArrayOf(9)) }
-        findViewById<Button>(R.id.btnUp).setOnClickListener {
+
+        // Arrow buttons with auto-repeat on hold
+        setupRepeatButton(findViewById(R.id.btnUp)) {
             val seq = if (terminalView.buffer.applicationCursorKeys) "\u001BOA" else "\u001B[A"
             sendBytesToPty(seq.toByteArray(Charsets.UTF_8))
         }
-        findViewById<Button>(R.id.btnDown).setOnClickListener {
+        setupRepeatButton(findViewById(R.id.btnDown)) {
             val seq = if (terminalView.buffer.applicationCursorKeys) "\u001BOB" else "\u001B[B"
             sendBytesToPty(seq.toByteArray(Charsets.UTF_8))
         }
-        findViewById<Button>(R.id.btnLeft).setOnClickListener {
+        setupRepeatButton(findViewById(R.id.btnLeft)) {
             val seq = if (terminalView.buffer.applicationCursorKeys) "\u001BOD" else "\u001B[D"
             sendBytesToPty(seq.toByteArray(Charsets.UTF_8))
         }
-        findViewById<Button>(R.id.btnRight).setOnClickListener {
+        setupRepeatButton(findViewById(R.id.btnRight)) {
             val seq = if (terminalView.buffer.applicationCursorKeys) "\u001BOC" else "\u001B[C"
             sendBytesToPty(seq.toByteArray(Charsets.UTF_8))
         }
+
+        // Navigation keys
+        findViewById<Button>(R.id.btnHome).setOnClickListener {
+            sendBytesToPty("\u001B[H".toByteArray(Charsets.UTF_8))
+        }
+        findViewById<Button>(R.id.btnEnd).setOnClickListener {
+            sendBytesToPty("\u001B[F".toByteArray(Charsets.UTF_8))
+        }
+        findViewById<Button>(R.id.btnPgUp).setOnClickListener {
+            sendBytesToPty("\u001B[5~".toByteArray(Charsets.UTF_8))
+        }
+        findViewById<Button>(R.id.btnPgDn).setOnClickListener {
+            sendBytesToPty("\u001B[6~".toByteArray(Charsets.UTF_8))
+        }
+
+        // Symbol buttons
         findViewById<Button>(R.id.btnPipe).setOnClickListener { sendBytesToPty("|".toByteArray()) }
         findViewById<Button>(R.id.btnTilde).setOnClickListener { sendBytesToPty("~".toByteArray()) }
         findViewById<Button>(R.id.btnSlash).setOnClickListener { sendBytesToPty("/".toByteArray()) }
         findViewById<Button>(R.id.btnDash).setOnClickListener { sendBytesToPty("-".toByteArray()) }
+        findViewById<Button>(R.id.btnBackslash).setOnClickListener { sendBytesToPty("\\".toByteArray()) }
+        findViewById<Button>(R.id.btnQuote).setOnClickListener { sendBytesToPty("\"".toByteArray()) }
     }
 
     private fun processModifiers(input: ByteArray): ByteArray {
@@ -107,13 +173,13 @@ class MainActivity : AppCompatActivity() {
                 result = byteArrayOf((c - 'A' + 1).toByte())
             }
             ctrlActive = false
-            findViewById<Button>(R.id.btnCtrl).setBackgroundColor(Color.parseColor("#242424"))
+            updateModifierButtonState(findViewById(R.id.btnCtrl), false)
         }
 
         if (altActive) {
             result = byteArrayOf(27) + result
             altActive = false
-            findViewById<Button>(R.id.btnAlt).setBackgroundColor(Color.parseColor("#242424"))
+            updateModifierButtonState(findViewById(R.id.btnAlt), false)
         }
 
         return result
@@ -136,7 +202,7 @@ class MainActivity : AppCompatActivity() {
             val prootFile = File(nativeLibDir, "libproot.so")
 
             // Initial banner
-            val banner = "TerminalDev v0.2.1\r\n" +
+            val banner = "TerminalDev v0.2.2\r\n" +
                 "Native lib: ${prootFile.name} (verified on targetSdk 35)\r\n\r\n"
             parser.feed(banner.toByteArray(Charsets.UTF_8))
             terminalView.requestRedraw()

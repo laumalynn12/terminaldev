@@ -11,201 +11,315 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <HorizontalScrollView
+    <LinearLayout
+        android:id="@+id/extraKeysContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#161616"
-        android:scrollbars="none">
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/extraKeysRow"
-            android:layout_width="wrap_content"
+        <!-- Row 1: Modifiers and symbols -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="2dp">
+            android:scrollbars="none">
 
-            <Button
-                android:id="@+id/btnKbd"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="42dp"
-                android:layout_height="38dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="⌨"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp" />
+            <LinearLayout
+                android:id="@+id/extraKeysRow1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="1dp">
 
-            <Button
-                android:id="@+id/btnEsc"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="ESC"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                <Button
+                    android:id="@+id/btnEsc"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="ESC"
+                    android:textColor="#E0E0E0"
+                    android:textSize="11sp" />
 
-            <Button
-                android:id="@+id/btnTab"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="TAB"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                <Button
+                    android:id="@+id/btnTab"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="TAB"
+                    android:textColor="#E0E0E0"
+                    android:textSize="11sp" />
 
-            <Button
-                android:id="@+id/btnCtrl"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="CTRL"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                <Button
+                    android:id="@+id/btnCtrl"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="CTRL"
+                    android:textColor="#E0E0E0"
+                    android:textSize="11sp" />
 
-            <Button
-                android:id="@+id/btnAlt"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="ALT"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp" />
+                <Button
+                    android:id="@+id/btnAlt"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="ALT"
+                    android:textColor="#E0E0E0"
+                    android:textSize="11sp" />
 
-            <Button
-                android:id="@+id/btnUp"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="42dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="▲"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnPipe"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="|"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnDown"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="42dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="▼"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnTilde"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="~"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnLeft"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="42dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="◀"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnSlash"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="/"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnRight"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="42dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="▶"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnDash"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="-"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnPipe"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="|"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnBackslash"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="\\"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnTilde"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="~"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                <Button
+                    android:id="@+id/btnQuote"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="36dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="&quot;"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnSlash"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="/"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+            </LinearLayout>
+        </HorizontalScrollView>
 
-            <Button
-                android:id="@+id/btnDash"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="2dp"
-                android:backgroundTint="#242424"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:padding="0dp"
-                android:text="-"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+        <!-- Row 2: Navigation and controls -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
 
-        </LinearLayout>
-    </HorizontalScrollView>
+            <LinearLayout
+                android:id="@+id/extraKeysRow2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:paddingTop="1dp"
+                android:paddingBottom="2dp">
+
+                <Button
+                    android:id="@+id/btnKbd"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="40dp"
+                    android:layout_height="34dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="⌨"
+                    android:textColor="#E0E0E0"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnLeft"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="40dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="◀"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnUp"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="40dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="▲"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnDown"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="40dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="▼"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnRight"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="40dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="▶"
+                    android:textColor="#E0E0E0"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnHome"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="HOME"
+                    android:textColor="#E0E0E0"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btnEnd"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="END"
+                    android:textColor="#E0E0E0"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btnPgUp"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="PGUP"
+                    android:textColor="#E0E0E0"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btnPgDn"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="46dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:backgroundTint="#242424"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="0dp"
+                    android:text="PGDN"
+                    android:textColor="#E0E0E0"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+    </LinearLayout>
 
 </LinearLayout>

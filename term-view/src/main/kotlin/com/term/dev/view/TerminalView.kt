@@ -44,7 +44,18 @@ class TerminalView @JvmOverloads constructor(
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bgPaint = Paint()
     private val cursorPaint = Paint().apply {
-        color = Color.parseColor("#33FF33")
+        color = Color.WHITE
+    }
+
+    private var cursorBlinkVisible = true
+    private val cursorBlinkRunnable = object : Runnable {
+        override fun run() {
+            if (isAttachedToWindow && hasWindowFocus()) {
+                cursorBlinkVisible = !cursorBlinkVisible
+                requestRedraw()
+                mainHandler.postDelayed(this, 500)
+            }
+        }
     }
 
     var textSizeSp: Float = 13f
@@ -102,6 +113,43 @@ class TerminalView @JvmOverloads constructor(
         loadTypeface()
         initColorPalette()
         updateFontMetrics()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        startCursorBlink()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopCursorBlink()
+    }
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        if (hasWindowFocus) {
+            startCursorBlink()
+        } else {
+            stopCursorBlink()
+        }
+    }
+
+    fun startCursorBlink() {
+        mainHandler.removeCallbacks(cursorBlinkRunnable)
+        cursorBlinkVisible = true
+        mainHandler.postDelayed(cursorBlinkRunnable, 500)
+    }
+
+    fun stopCursorBlink() {
+        mainHandler.removeCallbacks(cursorBlinkRunnable)
+        cursorBlinkVisible = true
+    }
+
+    fun restartCursorBlink() {
+        mainHandler.removeCallbacks(cursorBlinkRunnable)
+        cursorBlinkVisible = true
+        requestRedraw()
+        mainHandler.postDelayed(cursorBlinkRunnable, 500)
     }
 
     private fun loadTypeface() {
@@ -301,8 +349,8 @@ class TerminalView @JvmOverloads constructor(
                 }
             }
 
-            // Draw cursor
-            if (scrollOffsetY == 0 && buffer.cursorVisible && buffer.cursorRow == screenRowIdx) {
+            // Draw cursor with blinking
+            if (scrollOffsetY == 0 && buffer.cursorVisible && cursorBlinkVisible && buffer.cursorRow == screenRowIdx) {
                 val cx = buffer.cursorCol * charWidth
                 val density = resources.displayMetrics.density
                 when (cursorStyle) {
@@ -354,6 +402,7 @@ class TerminalView @JvmOverloads constructor(
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        restartCursorBlink()
         val bytes = KeyMapper.mapKeyEvent(event, buffer.applicationCursorKeys)
         if (bytes != null) {
             scrollOffsetY = 0
@@ -369,6 +418,7 @@ class TerminalView @JvmOverloads constructor(
         return object : BaseInputConnection(this, true) {
             override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
                 text?.let {
+                    restartCursorBlink()
                     scrollOffsetY = 0
                     onInput?.invoke(it.toString().toByteArray(Charsets.UTF_8))
                 }
@@ -377,8 +427,9 @@ class TerminalView @JvmOverloads constructor(
 
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 if (beforeLength > 0) {
+                    restartCursorBlink()
                     scrollOffsetY = 0
-                    onInput?.invoke(byteArrayOf(127)) // DEL / Backspace
+                    onInput?.invoke(byteArrayOf(127))
                 }
                 return true
             }
