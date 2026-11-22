@@ -19,7 +19,9 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
+import android.widget.OverScroller
 import com.term.dev.core.TerminalBuffer
+import com.term.dev.core.TerminalParser
 import com.term.dev.core.TerminalStyle
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -78,13 +80,49 @@ class TerminalView @JvmOverloads constructor(
             requestRedraw()
         }
 
+    private var accumulatedScrollY: Float = 0f
+    private val scroller = OverScroller(context)
+    private var lastFlingY: Int = 0
+
+    private val flingRunnable = object : Runnable {
+        override fun run() {
+            if (scroller.computeScrollOffset()) {
+                val currY = scroller.currY
+                val deltaPx = currY - lastFlingY
+                lastFlingY = currY
+                if (charHeight > 0f) {
+                    accumulatedScrollY -= deltaPx
+                    val linesDelta = (accumulatedScrollY / charHeight).toInt()
+                    if (linesDelta != 0) {
+                        val newScrollOffset = (scrollOffsetY - linesDelta).coerceIn(0, buffer.scrollback.size)
+                        if (newScrollOffset != scrollOffsetY) {
+                            scrollOffsetY = newScrollOffset
+                            accumulatedScrollY -= linesDelta * charHeight
+                        } else {
+                            accumulatedScrollY = 0f
+                            scroller.forceFinished(true)
+                        }
+                    }
+                }
+                if (!scroller.isFinished) {
+                    postOnAnimation(this)
+                }
+            }
+        }
+    }
+
     private val pendingRedraw = AtomicBoolean(false)
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val colorPalette = IntArray(256)
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-        override fun onDown(e: MotionEvent): Boolean = true
+        override fun onDown(e: MotionEvent): Boolean {
+            scroller.forceFinished(true)
+            removeCallbacks(flingRunnable)
+            accumulatedScrollY = 0f
+            return true
+        }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             showSoftKeyboard()
@@ -92,10 +130,28 @@ class TerminalView @JvmOverloads constructor(
         }
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-            val linesDelta = (distanceY / charHeight).toInt()
+            if (charHeight <= 0f) return true
+            accumulatedScrollY += distanceY
+            val linesDelta = (accumulatedScrollY / charHeight).toInt()
             if (linesDelta != 0) {
-                scrollOffsetY = (scrollOffsetY + linesDelta).coerceIn(0, buffer.scrollback.size)
+                val newScrollOffset = (scrollOffsetY - linesDelta).coerceIn(0, buffer.scrollback.size)
+                if (newScrollOffset != scrollOffsetY) {
+                    scrollOffsetY = newScrollOffset
+                    accumulatedScrollY -= linesDelta * charHeight
+                } else {
+                    accumulatedScrollY = 0f
+                }
             }
+            return true
+        }
+
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+            scroller.forceFinished(true)
+            removeCallbacks(flingRunnable)
+            lastFlingY = 0
+            accumulatedScrollY = 0f
+            scroller.fling(0, 0, 0, velocityY.toInt(), 0, 0, -1000000, 1000000)
+            postOnAnimation(flingRunnable)
             return true
         }
     })
@@ -123,6 +179,8 @@ class TerminalView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         stopCursorBlink()
+        scroller.forceFinished(true)
+        removeCallbacks(flingRunnable)
     }
 
     override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
@@ -250,6 +308,27 @@ class TerminalView @JvmOverloads constructor(
             val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             imm?.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
         }
+    }
+
+    fun scrollLines(lines: Int) {
+        scrollOffsetY = (scrollOffsetY + lines).coerceIn(0, buffer.scrollback.size)
+    }
+
+    fun scrollPages(pages: Int) {
+        val linesPerPage = maxOf(1, buffer.rows - 2)
+        scrollLines(pages * linesPerPage)
+    }
+
+    fun clearTerminal(parser: TerminalParser? = null) {
+        post {
+            scroller.forceFinished(true)
+            removeCallbacks(flingRunnable)
+        }
+        accumulatedScrollY = 0f
+        parser?.reset()
+        buffer.clearScreenAndHistory()
+        scrollOffsetY = 0
+        requestRedraw()
     }
 
     private fun resolveColor(encodedColor: Int, isBackground: Boolean): Int {

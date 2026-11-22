@@ -97,4 +97,23 @@ class TerminalParserTest {
         parser.feed("\u001B[1;3H\u001B[K".toByteArray(Charsets.UTF_8)) // Position at col 3 (1-based), erase to end of line
         assertEquals("AB", buffer.getLineText(0))
     }
+
+    @Test
+    fun testClearScreenAndHistory() {
+        val buffer = TerminalBuffer(rows = 5, columns = 20)
+        val parser = TerminalParser(buffer)
+
+        repeat(15) { i ->
+            parser.feed("Line $i\r\n".toByteArray(Charsets.UTF_8))
+        }
+        assertTrue(buffer.scrollback.size > 0)
+        assertTrue(buffer.cursorRow > 0)
+
+        parser.reset()
+        buffer.clearScreenAndHistory()
+        assertEquals(0, buffer.scrollback.size)
+        assertEquals(0, buffer.cursorRow)
+        assertEquals(0, buffer.cursorCol)
+        assertEquals("", buffer.getLineText(0).trim())
+    }
 }

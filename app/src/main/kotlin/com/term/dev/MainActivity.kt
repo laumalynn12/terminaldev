@@ -253,24 +253,31 @@ class MainActivity : AppCompatActivity() {
             val installer = RootfsInstaller()
 
             if (!installer.isInstalled(ubuntuDir)) {
-                val initBanner = "\u001B[1;36mTerminalDev v0.3.0\u001B[0m (Ubuntu 24.04.5 LTS Sandbox)\r\n" +
+                val initBanner = "\u001B[1;36mTerminalDev v0.3.1\u001B[0m (Ubuntu 24.04.5 LTS Sandbox)\r\n" +
                     "Architecture: $primaryAbi | targetSdk: 35\r\n\r\n" +
                     "\u001B[33mGuest rootfs not found. Initializing Ubuntu sandbox...\u001B[0m\r\n"
-                parser.feed(initBanner.toByteArray(Charsets.UTF_8))
+                synchronized(parser) {
+                    parser.feed(initBanner.toByteArray(Charsets.UTF_8))
+                }
                 terminalView.requestRedraw()
 
                 try {
                     installer.install(pkg, ubuntuDir, tmpDir) { progress ->
                         val line = "\r\u001B[K[setup] ${progress.message}\r\n"
-                        parser.feed(line.toByteArray(Charsets.UTF_8))
+                        synchronized(parser) {
+                            parser.feed(line.toByteArray(Charsets.UTF_8))
+                        }
                         terminalView.requestRedraw()
                     }
-                    parser.feed("\r\n\u001B[1;32m[setup] Rootfs successfully installed.\u001B[0m\r\n\r\n".toByteArray(Charsets.UTF_8))
-                    terminalView.requestRedraw()
+                    synchronized(parser) {
+                        terminalView.clearTerminal(parser)
+                    }
                 } catch (e: Exception) {
                     val errBanner = "\r\n\u001B[1;31m[setup] Installation failed: ${e.message}\u001B[0m\r\n" +
                         "Falling back to Android host shell /system/bin/sh...\r\n\r\n"
-                    parser.feed(errBanner.toByteArray(Charsets.UTF_8))
+                    synchronized(parser) {
+                        parser.feed(errBanner.toByteArray(Charsets.UTF_8))
+                    }
                     terminalView.requestRedraw()
                     startHostShellFallback()
                     return@thread

@@ -160,6 +160,14 @@ class TerminalParser(
         }
     }
 
+    fun reset() {
+        state = State.GROUND
+        resetParams()
+        oscBuffer.setLength(0)
+        utf8Remaining = 0
+        utf8CodePoint = 0
+    }
+
     private fun resetParams() {
         params.fill(0)
         paramCount = 0

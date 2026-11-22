@@ -142,6 +142,15 @@ class TerminalBuffer(
         }
     }
 
+    fun clearScreenAndHistory() {
+        currentStyle = TerminalStyle.STYLE_NONE
+        currentFg = TerminalStyle.COLOR_DEFAULT_FG
+        currentBg = TerminalStyle.COLOR_DEFAULT_BG
+        eraseInDisplay(3)
+        cursorRow = 0
+        cursorCol = 0
+    }
+
     fun eraseInLine(mode: Int) {
         val row = activeScreen()[cursorRow]
         when (mode) {
